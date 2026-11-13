@@ -32,8 +32,9 @@ try {
         if (cmd === "gate_state") return Promise.resolve({ base: "https://fixture.invalid", adapter: "edge_v1", activated: true });
         if (cmd === "data_call") {
           const command = args.command || {};
-          const map = { boot: "app_boot", feed: "api_feed", category: "api_category", posts: "api_posts", search_hot: "api_search_hot", play: "api_play" };
-          cmd = map[command.cmd] || command.cmd;
+          const raw = String(command.cmd);
+          // 领域命令 → 旧 IPC 名：boot 走 app_boot，其余统一加 api_ 前缀
+          cmd = raw === "boot" ? "app_boot" : `api_${raw}`;
           args = { ...command }; delete args.cmd;
         }
         fixture.calls.push({ cmd, args });
