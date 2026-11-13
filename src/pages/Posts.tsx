@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, cover, fmt, isMobile } from "../api";
-import type { Post, PostCategory } from "../types";
+import type { Post } from "../types";
 import { useStore } from "../store";
 import { copyText } from "../clipboard";
 import { Empty, Img } from "../components/ui";
@@ -13,18 +13,12 @@ import { InplaceSearch } from "../components/InplaceSearch";
 export function PostsPage({ onBack, wide }: { onBack: () => void; wide: boolean }) {
   const { push } = useStore();
   const [searching, setSearching] = useState(false);
-  const [cats, setCats] = useState<PostCategory[]>([]);
-  const [cat, setCat] = useState<string>(""); // 空 = 全部
   const [items, setItems] = useState<Post[]>([]);
   const [page, setPage] = useState(0);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const busy = useRef(false);
   const sentinel = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    api.postCategories().then((r) => setCats(r?.items || [])).catch(() => {});
-  }, []);
 
   const loadMore = async (reset = false) => {
     if (busy.current) return;
@@ -33,7 +27,7 @@ export function PostsPage({ onBack, wide }: { onBack: () => void; wide: boolean 
     busy.current = true;
     setLoading(true);
     try {
-      const res = cat ? await api.postCategory(cat, next, 20) : await api.posts(next, 20);
+      const res = await api.postCategory("remen-chigua", next, 20, "latest");
       setItems((prev) => {
         const base = reset ? [] : prev;
         const seen = new Set(base.map((x) => x.id));
@@ -47,15 +41,7 @@ export function PostsPage({ onBack, wide }: { onBack: () => void; wide: boolean 
     }
   };
 
-  const pickCat = (route: string) => {
-    if (route === cat) return;
-    setCat(route);
-    setItems([]);
-    setPage(0);
-    setPages(1);
-  };
-
-  useEffect(() => { loadMore(true); /* eslint-disable-next-line */ }, [cat]);
+  useEffect(() => { loadMore(true); /* eslint-disable-next-line */ }, []);
   useEffect(() => {
     const el = sentinel.current;
     if (!el) return;
@@ -63,28 +49,16 @@ export function PostsPage({ onBack, wide }: { onBack: () => void; wide: boolean 
     io.observe(el);
     return () => io.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pages, cat]);
+  }, [page, pages]);
 
   return (
     <div className="absolute inset-0 bg-bg flex flex-col">
       <div className="shrink-0 flex items-center gap-2 px-2 bg-s1" style={{ paddingTop: "var(--sat, 0px)" }}>
         <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center text-on hover:bg-s3 pressable"><IBack size={19} /></button>
         <span className="text-[14px] font-bold text-on">吃瓜</span>
-        <span className="text-[10.5px] text-mut ml-1">圈内爆料</span>
+        <span className="text-[10.5px] text-mut ml-1">圈内爆料 · 每日更新</span>
         <button onClick={() => setSearching(true)} aria-label="搜索吃瓜帖" className="ml-auto w-9 h-9 rounded-full flex items-center justify-center text-on hover:bg-s3 pressable"><ISearch size={19} /></button>
       </div>
-      {cats.length > 0 && (
-        <div className="shrink-0 flex gap-2 px-4 py-2.5 overflow-x-auto no-bar">
-          <button onClick={() => pickCat("")}
-            className={`shrink-0 px-4 h-8 rounded-(--r-ctl) text-[12px] font-semibold pressable ${cat === "" ? "tonal text-on-sec" : "bg-s3 text-mut"}`}
-            style={cat === "" ? { background: "var(--p-sec)", color: "var(--p-primary)" } : undefined}>全部</button>
-          {cats.map((c) => (
-            <button key={c.route} onClick={() => pickCat(c.route)}
-              className={`shrink-0 px-4 h-8 rounded-(--r-ctl) text-[12px] font-semibold pressable ${cat === c.route ? "tonal text-on-sec" : "bg-s3 text-mut"}`}
-              style={cat === c.route ? { background: "var(--p-sec)", color: "var(--p-primary)" } : undefined}>{c.name}</button>
-          ))}
-        </div>
-      )}
       <div className="flex-1 scroll-y px-3 pt-3 pb-8">
         {items.length ? (
           <div className={`${wide ? "columns-3 xl:columns-4" : "columns-2"} gap-2`}>
@@ -111,12 +85,14 @@ export function PostsPage({ onBack, wide }: { onBack: () => void; wide: boolean 
         <div ref={sentinel} className="h-10" />
         {loading && <div className="flex justify-center py-2"><div className="w-6 h-6 spinner" /></div>}
       </div>
-      {searching && <InplaceSearch kind="post" wide={wide} onClose={() => setSearching(false)} onOpenPost={(p) => push({ kind: "post", id: p.id })} />}
+      {searching && <InplaceSearch kind="post" postLabel="吃瓜帖子" wide={wide} onClose={() => setSearching(false)} onOpenPost={(p) => push({ kind: "post", id: p.id })} />}
     </div>
   );
 }
 
 const isHtml = (s: string) => /<(p|div|br|img|h[1-6]|ul|ol|li|blockquote|span|strong|em)\b/i.test(s);
+/* 过滤上游旧品牌标签，避免显示到界面。 */
+const HIDDEN_POST_TAG = "\u9ec4\u679c";
 
 /* ================= 吃瓜详情（网页式浏览） ================= */
 export function PostDetail({ id, onBack, active = true }: { id: number; onBack: () => void; active?: boolean }) {
@@ -218,7 +194,7 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
                 <span className="flex items-center gap-1"><IFireF size={10} />{fmt(post.hot)}</span>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2.5">
-                {(post.tags || []).slice(0, 8).map((t) => (
+                {(post.tags || []).filter((t) => !t.includes(HIDDEN_POST_TAG)).slice(0, 8).map((t) => (
                   <span key={t} className="px-2 py-0.5 rounded-(--r-ctl) bg-s3 text-[10.5px] text-on/75">#{t}</span>
                 ))}
               </div>

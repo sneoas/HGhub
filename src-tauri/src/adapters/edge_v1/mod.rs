@@ -18,6 +18,14 @@ fn encode(value: &str) -> String {
     url::form_urlencoded::byte_serialize(value.as_bytes()).collect()
 }
 
+/// 排序参数：上游统一用 `&sort=`，空值或纯空白视为不排序。
+fn sort_q(sort: Option<&str>) -> String {
+    match sort {
+        Some(s) if !s.trim().is_empty() => format!("&sort={}", encode(s)),
+        _ => String::new(),
+    }
+}
+
 impl EdgeV1Adapter {
     pub fn new(origin: String, token: Option<String>) -> Self {
         Self {
@@ -115,14 +123,40 @@ impl EdgeV1Adapter {
         cate: &str,
         page: u32,
         size: u32,
+        sort: Option<&str>,
     ) -> Result<Paged<VideoCard>, String> {
         let data = self
             .client
             .get(&format!(
-                "/api/videos/category/{}?page={page}&size={size}",
-                encode(cate)
+                "/api/videos/category/{}?page={page}&size={size}{}",
+                encode(cate),
+                sort_q(sort)
             ))
             .await?;
+        Ok(mapper::map_paged_videos(&data))
+    }
+
+    /// 原创 Tab：`is_original=1` 过滤；cate 为 all 时走全站列表。
+    pub async fn original_videos(
+        &self,
+        cate: &str,
+        page: u32,
+        size: u32,
+        sort: Option<&str>,
+    ) -> Result<Paged<VideoCard>, String> {
+        let path = if cate == "all" {
+            format!(
+                "/api/videos?is_original=1&page={page}&size={size}{}",
+                sort_q(sort)
+            )
+        } else {
+            format!(
+                "/api/videos/category/{}?is_original=1&page={page}&size={size}{}",
+                encode(cate),
+                sort_q(sort)
+            )
+        };
+        let data = self.client.get(&path).await?;
         Ok(mapper::map_paged_videos(&data))
     }
 
@@ -166,10 +200,18 @@ impl EdgeV1Adapter {
         Ok(mapper::map_hot_words(&data))
     }
 
-    pub async fn posts(&self, page: u32, size: u32) -> Result<Paged<Post>, String> {
+    pub async fn posts(
+        &self,
+        page: u32,
+        size: u32,
+        sort: Option<&str>,
+    ) -> Result<Paged<Post>, String> {
         let data = self
             .client
-            .get(&format!("/api/posts?page={page}&size={size}"))
+            .get(&format!(
+                "/api/posts?page={page}&size={size}{}",
+                sort_q(sort)
+            ))
             .await?;
         Ok(mapper::map_posts(&data))
     }
@@ -236,12 +278,14 @@ impl EdgeV1Adapter {
         route: &str,
         page: u32,
         size: u32,
+        sort: Option<&str>,
     ) -> Result<Paged<Post>, String> {
         let data = self
             .client
             .get(&format!(
-                "/api/posts/category/{}?page={page}&size={size}",
-                encode(route)
+                "/api/posts/category/{}?page={page}&size={size}{}",
+                encode(route),
+                sort_q(sort)
             ))
             .await?;
         Ok(mapper::map_posts(&data))

@@ -62,7 +62,7 @@ export const playlist = (url: string) => `${LOCAL}/hls?u=${encodeURIComponent(ur
 const NET_FAIL = /dns|timed? ?out|timeout|connection|refused|reset|unreachable|broken pipe|tls|ssl|handshake|证书|网络|连接/i;
 /** 只读命令：链路抖动时可以安全重试一次；写操作绝不重试（避免重复提交） */
 const READ_ONLY = new Set([
-  "api_me", "api_feed", "api_category", "api_rank", "api_search",
+  "api_me", "api_feed", "api_original_videos", "api_category", "api_rank", "api_search",
   "api_posts", "api_post", "api_post_comments", "api_video", "api_play", "api_comments",
   "api_topics", "api_topic", "api_tags", "api_tag_videos", "api_search_hot",
   "api_post_playback", "api_post_categories", "api_post_category", "api_related", "api_following", "api_user", "api_user_stats", "api_user_videos",
@@ -138,8 +138,10 @@ export const api = {
   tags: () => call<{ categories: TagGroup[] }>("api_tags", commands.tags()),
   tagVideos: (tag: string, page = 1, size = 20) =>
     call<Paged<VideoCard>>("api_tag_videos", commands.tagVideos(tag, page, size)),
-  category: (cate: string, page = 1, size = 20) =>
-    call<Paged<VideoCard>>("api_category", commands.category(cate, page, size)),
+  category: (cate: string, page = 1, size = 20, sort?: string) =>
+    call<Paged<VideoCard>>("api_category", commands.category(cate, page, size, sort)),
+  originalVideos: (cate: string, page = 1, size = 20, sort?: string) =>
+    call<Paged<VideoCard>>("api_original_videos", commands.originalVideos(cate, page, size, sort)),
   rank: (kind: "hot" | "recommend" | "potential") =>
     call<{ type: string; items: RankItem[] }>("api_rank", commands.rank(kind)),
   /** 全站搜索。`kind` 省略时后端只搜短剧；吃瓜帖要显式传 "post"（issue #34）。 */
@@ -153,7 +155,7 @@ export const api = {
       "api_search", commands.search(q, page, size, "post"),
     ),
   searchHot: () => call<{ items: HotWord[] }>("api_search_hot", commands.searchHot()),
-  posts: (page = 1, size = 20) => call<Paged<Post>>("api_posts", commands.posts(page, size)),
+  posts: (page = 1, size = 20, sort?: string) => call<Paged<Post>>("api_posts", commands.posts(page, size, sort)),
   post: (id: number) => call<Post & { content?: string; video_url?: string }>("api_post", commands.post(id)),
   /** 吃瓜帖视频：详情里 video_url 恒为空，地址由 playback 接口下发（可能多段）。 */
   postPlayback: (id: number) => call<{ mode?: number; videos?: { index: number; url: string }[] }>("api_post_playback", commands.postPlayback(id)),
@@ -173,8 +175,8 @@ export const api = {
   postCollect: (id: number, on: boolean) => call<unknown>("api_post_collect", commands.postCollect(id, on)),
   postComments: (id: number, page: number, size: number) => call<CommentPage>("api_post_comments", commands.postComments(id, page, size)),
   postCategories: () => call<{ items: PostCategory[] }>("api_post_categories", commands.postCategories()),
-  postCategory: (route: string, page = 1, size = 20) =>
-    call<Paged<Post>>("api_post_category", commands.postCategory(route, page, size)),
+  postCategory: (route: string, page = 1, size = 20, sort?: string) =>
+    call<Paged<Post>>("api_post_category", commands.postCategory(route, page, size, sort)),
   related: (id: number) => call<{ items: VideoCard[] }>("api_related", commands.related(id)),
   following: (page = 1, size = 20) => call<Paged<VideoCard>>("api_following", commands.following(page, size)),
   user: (id: number) => call<UserProfile>("api_user", commands.user(id)),

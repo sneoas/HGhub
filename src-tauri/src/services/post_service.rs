@@ -4,8 +4,13 @@ use crate::api::Api;
 use crate::services::{adapter, to_json};
 use serde_json::Value;
 
-pub async fn posts(api: &Api, page: u32, size: u32) -> Result<Value, String> {
-    to_json(&adapter(api).posts(page, size).await?)
+pub async fn posts(
+    api: &Api,
+    page: u32,
+    size: u32,
+    sort: Option<String>,
+) -> Result<Value, String> {
+    to_json(&adapter(api).posts(page, size, sort.as_deref()).await?)
 }
 
 pub async fn post(api: &Api, id: i64) -> Result<Value, String> {
@@ -32,6 +37,12 @@ pub async fn post_categories(api: &Api) -> Result<Value, String> {
     Ok(serde_json::json!({ "items": adapter(api).post_categories().await? }))
 }
 
-pub async fn post_category(api: &Api, route: String, page: u32, size: u32) -> Result<Value, String> {
-    to_json(&adapter(api).post_category(&route, page, size).await?)
+pub async fn post_category(
+    api: &Api,
+    route: String,
+    page: u32,
+    size: u32,
+    sort: Option<String>,
+) -> Result<Value, String> {
+    to_json(&adapter(api).post_category(&route, page, size, sort.as_deref()).await?)
 }

@@ -24,8 +24,24 @@ pub async fn tag_videos(api: &Api, tag: String, page: u32, size: u32) -> Result<
     to_json(&adapter(api).tag_videos(&tag, page, size).await?)
 }
 
-pub async fn category(api: &Api, cate: String, page: u32, size: u32) -> Result<Value, String> {
-    to_json(&adapter(api).category(&cate, page, size).await?)
+pub async fn category(
+    api: &Api,
+    cate: String,
+    page: u32,
+    size: u32,
+    sort: Option<String>,
+) -> Result<Value, String> {
+    to_json(&adapter(api).category(&cate, page, size, sort.as_deref()).await?)
+}
+
+pub async fn original_videos(
+    api: &Api,
+    cate: String,
+    page: u32,
+    size: u32,
+    sort: Option<String>,
+) -> Result<Value, String> {
+    to_json(&adapter(api).original_videos(&cate, page, size, sort.as_deref()).await?)
 }
 
 pub async fn rank(api: &Api, kind: String) -> Result<Value, String> {

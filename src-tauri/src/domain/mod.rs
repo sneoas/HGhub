@@ -52,6 +52,18 @@ pub enum DomainCommand {
         page: u32,
         #[serde(default = "default_size")]
         size: u32,
+        #[serde(default)]
+        sort: Option<String>,
+    },
+    /// 原创 Tab 列表：cate 为 all 表示全站原创。
+    OriginalVideos {
+        cate: String,
+        #[serde(default = "default_page")]
+        page: u32,
+        #[serde(default = "default_size")]
+        size: u32,
+        #[serde(default)]
+        sort: Option<String>,
     },
     Rank {
         #[serde(default = "default_rank_kind")]
@@ -72,6 +84,8 @@ pub enum DomainCommand {
         page: u32,
         #[serde(default = "default_size")]
         size: u32,
+        #[serde(default)]
+        sort: Option<String>,
     },
     Post {
         id: i64,
@@ -101,6 +115,8 @@ pub enum DomainCommand {
         page: u32,
         #[serde(default = "default_size")]
         size: u32,
+        #[serde(default)]
+        sort: Option<String>,
     },
     Video {
         id: i64,

@@ -53,15 +53,20 @@ pub async fn dispatch(api: &Api, command: DomainCommand) -> Result<Value, String
         DomainCommand::TagVideos { tag, page, size } => {
             catalog_service::tag_videos(api, tag, page, size).await
         }
-        DomainCommand::Category { cate, page, size } => {
-            catalog_service::category(api, cate, page, size).await
+        DomainCommand::Category { cate, page, size, sort } => {
+            catalog_service::category(api, cate, page, size, sort).await
+        }
+        DomainCommand::OriginalVideos { cate, page, size, sort } => {
+            catalog_service::original_videos(api, cate, page, size, sort).await
         }
         DomainCommand::Rank { kind } => catalog_service::rank(api, kind).await,
         DomainCommand::Search { q, page, size, kind } => {
             catalog_service::search(api, q, page, size, kind).await
         }
         DomainCommand::SearchHot => catalog_service::search_hot(api).await,
-        DomainCommand::Posts { page, size } => post_service::posts(api, page, size).await,
+        DomainCommand::Posts { page, size, sort } => {
+            post_service::posts(api, page, size, sort).await
+        }
         DomainCommand::Post { id } => post_service::post(api, id).await,
         DomainCommand::PostPlayback { id } => post_service::post_playback(api, id).await,
         DomainCommand::PostLike { id, on } => post_service::post_like(api, id, on).await,
@@ -70,8 +75,8 @@ pub async fn dispatch(api: &Api, command: DomainCommand) -> Result<Value, String
             post_service::post_comments(api, id, page, size).await
         }
         DomainCommand::PostCategories => post_service::post_categories(api).await,
-        DomainCommand::PostCategory { route, page, size } => {
-            post_service::post_category(api, route, page, size).await
+        DomainCommand::PostCategory { route, page, size, sort } => {
+            post_service::post_category(api, route, page, size, sort).await
         }
         DomainCommand::Video { id } => playback_service::video(api, id).await,
         DomainCommand::Play { id, ep } => playback_service::play(api, id, ep).await,

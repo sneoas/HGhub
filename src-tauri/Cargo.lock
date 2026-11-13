@@ -1728,6 +1728,7 @@ dependencies = [
  "time",
  "tokio",
  "url",
+ "winreg",
 ]
 
 [[package]]

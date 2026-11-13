@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 照上游 Minireel/HGhub scripts/build-ios-unsigned.sh 重写（9ca6972）。
+# 照上游 Minireel/HGhubX scripts/build-ios-unsigned.sh 重写（9ca6972）。
 # 关键点：不再用 cargo 直出静态库 + -Wl,-undefined,dynamic_lookup，
 # 而是让 tauri ios build 的 options server 活着，由 Xcode 自己跑 Build Rust Code，
 # 并把 Swift 兼容库目录指到 Xcode toolchain 里（Xcode 26 挪了位置）。
